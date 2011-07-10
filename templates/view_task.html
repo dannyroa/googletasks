@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block header %}<h1><a href="/list/{{ list.id }}">{{ list.title }}</a></h1>{% endblock %}
+
+{% block body %}
+
+<div class="align-center"><h1>{{ task.title }}</h1></div>
+
+<input type="submit" value="Mark as Completed" data-theme="b" />
+
+<input type="button" value="Delete" data-theme="c" /> 
+
+{% endblock %}

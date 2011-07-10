@@ -25,7 +25,7 @@ __all__ = [
     'set_user_agent', 'tunnel_patch'
     ]
 
-import httplib2
+from libraries.googleapiclient import httplib2
 import os
 
 from model import JsonModel

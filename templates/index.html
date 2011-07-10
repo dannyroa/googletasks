@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block body %}
+
+<ul data-role="listview" data-inset="true"> 
+{% for list in lists %}
+<li><a href="/list/{{ list.id }}">{{ list.title }}</a></li>
+{% endfor %}
+</ul>
+
+{% endblock %}

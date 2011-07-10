@@ -1,0 +1,14 @@
+
+{% extends "base.html" %}
+
+{% block header %}<h1>{{ list.title }}</h1>{% endblock %}
+
+{% block body %}
+
+<ul data-role="listview" data-inset="true"> 
+{% for task in tasks %}
+<li><a href="/list/{{ list.id }}/task/{{ task.id }}">{{ task.title }}</a></li>
+{% endfor %}
+</ul>
+
+{% endblock %}

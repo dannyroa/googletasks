@@ -15,55 +15,132 @@
 # limitations under the License.
 #
 
+from google.appengine.dist import use_library
+use_library('django', '1.2')
+
+import os
+import pickle
+
 from libraries.googleapiclient import httplib2
 
+from google.appengine.api import memcache
+from google.appengine.ext.webapp import template
+from google.appengine.api import users
 from google.appengine.ext import webapp
+
 from google.appengine.ext.webapp import util
+from google.appengine.ext.webapp.util import login_required
 
+from libraries.googleapiclient.apiclient.discovery import build
 from libraries.googleapiclient.oauth2client.client import OAuth2WebServerFlow
+from libraries.googleapiclient.oauth2client.appengine import StorageByKeyName
 
-STEP2_URI = 'http://www.dannylocal.com:8082/callback'
 
-CLIENT_ID = '33691209862-ds6afl606ateo3nucq573003ba6i0gni.apps.googleusercontent.com'
-CLIENT_SECRET = 'kGn5a8li6irL-nDqYP8l-KR5'
-SCOPE = 'https://www.googleapis.com/auth/tasks'
-APP_NAME = 'GTasks for Android Tablet'
+from models import *
+
+
+IS_DEBUG = True
+if os.environ.get('SERVER_SOFTWARE','').startswith('Goog'):
+    IS_DEBUG = False
+
+import settings
+
+
 
 
 FLOW = OAuth2WebServerFlow(
-            client_id=CLIENT_ID,
-            client_secret=CLIENT_SECRET,
-            scope=SCOPE,
-            user_agent='%s/0.1' % APP_NAME,
+            client_id=settings.CLIENT_ID,
+            client_secret=settings.CLIENT_SECRET,
+            scope=settings.SCOPE,
+            user_agent='%s/0.1' % settings.APP_NAME,
             response_type='code'
         )
 
 class ConnectHandler(webapp.RequestHandler):
-
+    @login_required
     def get(self):
-        
-        authorize_url = FLOW.step1_get_authorize_url(STEP2_URI)
-        
-        self.redirect(authorize_url)
+        user = users.get_current_user()
+        credentials = StorageByKeyName(Credentials, user.user_id(), 'credentials').get()
+        if credentials is None or credentials.invalid == True:
+            callback_url = self.request.relative_url('/callback')
+            authorize_url = FLOW.step1_get_authorize_url(callback_url)
+            memcache.set(user.user_id(), pickle.dumps(FLOW))
+            self.redirect(authorize_url)
+        else:
+            self.redirect('/')
 
 
 class CallbackHandler(webapp.RequestHandler):
 
+    @login_required
     def get(self):
-        credentials = FLOW.step2_exchange(self.request.params)
-        self.response.out.write(credentials.access_token)
+        user = users.get_current_user()
+        flow = pickle.loads(memcache.get(user.user_id()))
+        credentials = flow.step2_exchange(self.request.params)
+        StorageByKeyName(Credentials, user.user_id(), 'credentials').put(credentials)
+        
+        self.redirect('/')
 
 
 class MainHandler(webapp.RequestHandler):
     def get(self):
-        self.response.out.write('Hello world!')
+        user = users.get_current_user()
+        credentials = StorageByKeyName(Credentials, user.user_id(), 'credentials').get()
+        http = httplib2.Http()
+        http = credentials.authorize(http)
+        
+        service = build(serviceName='tasks', version='v1', http=http, developerKey=settings.API_KEY)
+
+        tasklists = service.tasklists().list().execute()
+            
+        lists = tasklists['items']
+        
+        self.response.out.write(template.render('templates/index.html',
+                                              {'lists': lists}))
+
+class ViewListHandler(webapp.RequestHandler):
+
+    def get(self, id):
+        user = users.get_current_user()
+        credentials = StorageByKeyName(Credentials, user.user_id(), 'credentials').get()
+        http = httplib2.Http()
+        http = credentials.authorize(http)  
+        service = build(serviceName='tasks', version='v1', http=http, developerKey=settings.API_KEY)
+        
+        list = service.tasklists().get(tasklist=id).execute()
+        
+        tasklists = service.tasks().list(tasklist=id).execute()
+        tasks = tasklists['items']
+
+        self.response.out.write(template.render('templates/view_list.html',
+                                              {'list' : list, 'tasks': tasks}))
+
+
+class ViewTaskHandler(webapp.RequestHandler):
+
+    def get(self, list_id, task_id):
+            
+        user = users.get_current_user()
+        credentials = StorageByKeyName(Credentials, user.user_id(), 'credentials').get()
+        http = httplib2.Http()
+        http = credentials.authorize(http)  
+        service = build(serviceName='tasks', version='v1', http=http, developerKey=settings.API_KEY)
+        
+        list = service.tasklists().get(tasklist=list_id).execute()
+        
+        task = service.tasks().get(tasklist=list_id, task=task_id).execute()
+
+        self.response.out.write(template.render('templates/view_task.html',
+                                              {'list' : list, 'task': task}))
 
 
 def main():
     application = webapp.WSGIApplication([('/', MainHandler)
                                         , ('/connect', ConnectHandler)
-                                        , ('/callback', CallbackHandler)],
-                                         debug=True)
+                                        , ('/callback', CallbackHandler)
+                                        , ('/list/([^\/]*)/task/([^\/]*)', ViewTaskHandler)
+                                        , ('/list/([^\/]*)', ViewListHandler),],
+                                         debug=IS_DEBUG)
     util.run_wsgi_app(application)
 
 

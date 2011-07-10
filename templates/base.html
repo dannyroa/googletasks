@@ -1,0 +1,21 @@
+<html>
+  <head>
+
+<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0b1/jquery.mobile-1.0b1.min.css" />
+<script src="http://code.jquery.com/jquery-1.6.1.min.js"></script>
+<script src="http://code.jquery.com/mobile/1.0b1/jquery.mobile-1.0b1.min.js"></script>
+    <link href="/css/style.css" rel="stylesheet" type="text/cs">
+  </head>
+  <body>
+    <div  data-role="page">
+    
+<div data-role="header"><a href="/" data-icon="home">Lists</a> {% block header %}{% endblock %}</div>
+        
+<div  data-role="content">
+{% block body %}
+
+{% endblock %}
+</div>
+    </div>
+  </body>
+</html>

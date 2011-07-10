@@ -24,7 +24,7 @@ object representation.
 
 __author__ = 'jcgregorio@google.com (Joe Gregorio)'
 
-import gflags
+from libraries.googleapiclient import gflags
 import logging
 import urllib
 

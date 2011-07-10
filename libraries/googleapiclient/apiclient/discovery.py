@@ -22,11 +22,11 @@ __all__ = [
     'build', 'build_from_document'
     ]
 
-import httplib2
+from libraries.googleapiclient import httplib2
 import logging
 import os
 import re
-import uritemplate
+from libraries.googleapiclient import uritemplate
 import urllib
 import urlparse
 import mimeparse
