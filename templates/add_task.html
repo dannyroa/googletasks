@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block header %}<h1 class="header_title"><a type="button" href="/list/{{ list.id }}">{{ list.title }}</a></h1>{% endblock %}
+
+{% block body %}
+
+<div class="align-center"><h1>{{ task.title }}</h1></div>
+
+<form id="task_form" method="POST" action="/list/{{ list.id }}/task/add">
+
+
+<div data-role="fieldcontain">
+<textarea rows="8" name="title" id="title" style="width: 100%"></textarea>
+</div>
+
+<input type="submit" value="Add Task" data-theme="c" /> 
+
+
+</form>
+
+
+{% endblock %}

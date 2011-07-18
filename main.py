@@ -56,6 +56,19 @@ FLOW = OAuth2WebServerFlow(
             response_type='code'
         )
 
+
+def get_task_service():
+
+    user = users.get_current_user()
+    credentials = StorageByKeyName(Credentials, user.user_id(), 'credentials').get()
+    http = httplib2.Http()
+    http = credentials.authorize(http)
+        
+    service = build(serviceName='tasks', version='v1', http=http, developerKey=settings.API_KEY)
+    
+    return service
+
+
 class ConnectHandler(webapp.RequestHandler):
     @login_required
     def get(self):
@@ -83,62 +96,137 @@ class CallbackHandler(webapp.RequestHandler):
 
 
 class MainHandler(webapp.RequestHandler):
-    def get(self):
-        user = users.get_current_user()
-        credentials = StorageByKeyName(Credentials, user.user_id(), 'credentials').get()
-        http = httplib2.Http()
-        http = credentials.authorize(http)
-        
-        service = build(serviceName='tasks', version='v1', http=http, developerKey=settings.API_KEY)
 
-        tasklists = service.tasklists().list().execute()
+
+    def get(self):
+
+        if not users.get_current_user():
+            self.redirect('/connect')
+        else:
+            service = get_task_service()
+
+            tasklists = service.tasklists().list().execute()
+            lists = tasklists['items']
             
-        lists = tasklists['items']
-        
-        self.response.out.write(template.render('templates/index.html',
-                                              {'lists': lists}))
+            self.response.out.write(template.render('templates/index.html',
+                                                  {'lists': lists}))
 
 class ViewListHandler(webapp.RequestHandler):
 
     def get(self, id):
-        user = users.get_current_user()
-        credentials = StorageByKeyName(Credentials, user.user_id(), 'credentials').get()
-        http = httplib2.Http()
-        http = credentials.authorize(http)  
-        service = build(serviceName='tasks', version='v1', http=http, developerKey=settings.API_KEY)
+        
+        service = get_task_service()
         
         list = service.tasklists().get(tasklist=id).execute()
-        
-        tasklists = service.tasks().list(tasklist=id).execute()
-        tasks = tasklists['items']
+        task_lists = service.tasks().list(tasklist=id).execute()
+
+        tasks = []
+        if task_lists.has_key('items'):
+            tasks = task_lists['items']
 
         self.response.out.write(template.render('templates/view_list.html',
                                               {'list' : list, 'tasks': tasks}))
 
 
+class AddListHandler(webapp.RequestHandler):
+
+    def get(self):
+
+        self.response.out.write(template.render('templates/add_list.html',
+                                              {}))
+
+    def post(self):
+
+        service = get_task_service()
+
+        list_title = self.request.get('title') 
+        
+        task_list = {'title': list_title }
+
+        result = service.tasklists().insert(body=task_list).execute() 
+
+        self.redirect('/')
+
+
+class AddTaskHandler(webapp.RequestHandler):
+
+    def get(self, list_id):
+
+        service = get_task_service()
+
+        list = service.tasklists().get(tasklist=list_id).execute()
+
+        self.response.out.write(template.render('templates/add_task.html',
+                                              {'list' : list}))
+
+    def post(self, list_id):
+
+        service = get_task_service()
+
+        task_title = self.request.get('title') 
+        
+        task = {'title': task_title }
+
+        result = service.tasks().insert(tasklist=list_id, body=task).execute() 
+
+        self.redirect('/list/%s' % list_id)
+
 class ViewTaskHandler(webapp.RequestHandler):
 
     def get(self, list_id, task_id):
             
-        user = users.get_current_user()
-        credentials = StorageByKeyName(Credentials, user.user_id(), 'credentials').get()
-        http = httplib2.Http()
-        http = credentials.authorize(http)  
-        service = build(serviceName='tasks', version='v1', http=http, developerKey=settings.API_KEY)
-        
+        service = get_task_service()
+
         list = service.tasklists().get(tasklist=list_id).execute()
-        
         task = service.tasks().get(tasklist=list_id, task=task_id).execute()
 
         self.response.out.write(template.render('templates/view_task.html',
                                               {'list' : list, 'task': task}))
+
+    def post(self, list_id, task_id):
+
+        service = get_task_service()
+
+        action = self.request.get('action')  
+
+        list = service.tasklists().get(tasklist=list_id).execute()
+        
+        if action == 'completed':
+            task = service.tasks().get(tasklist=list_id, task=task_id).execute()
+            task['status'] = 'completed'
+            result = service.tasks().update(tasklist=list_id, task=task['id'], body=task).execute()
+        elif action == 'revert':
+            task = service.tasks().get(tasklist=list_id, task=task_id).execute()
+            task['status'] = 'needsAction'
+            task['completed'] = None
+            result = service.tasks().update(tasklist=list_id, task=task['id'], body=task).execute()
+        elif action == 'delete':
+            service.tasks().delete(tasklist=list_id, task=task_id).execute()
+        self.redirect('/list/%s' % list_id)
+
+
+class CompleteTaskHandler(webapp.RequestHandler):
+
+    def get(self, list_id, task_id):
+
+        service = get_task_service()
+
+        #list = service.tasklists().get(tasklist=list_id).execute()
+        task = service.tasks().get(tasklist=list_id, task=task_id).execute()
+        task['status'] = 'completed'
+        result = service.tasks().update(tasklist=list_id, task=task['id'], body=task).execute()
+        
+        self.redirect('/list/%s' % list_id)
 
 
 def main():
     application = webapp.WSGIApplication([('/', MainHandler)
                                         , ('/connect', ConnectHandler)
                                         , ('/callback', CallbackHandler)
+                                        , ('/list/add', AddListHandler)
+                                        , ('/list/([^\/]*)/task/add', AddTaskHandler)
                                         , ('/list/([^\/]*)/task/([^\/]*)', ViewTaskHandler)
+                                        , ('/list/([^\/]*)/task/([^\/]*)/complete', CompleteTaskHandler)
                                         , ('/list/([^\/]*)', ViewListHandler),],
                                          debug=IS_DEBUG)
     util.run_wsgi_app(application)

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block header %}<h1 class="header_title"></h1>{% endblock %}
+
+{% block body %}
+
+<div class="align-center"><h1>{{ task.title }}</h1></div>
+
+<form id="task_form" method="POST" action="/list/add">
+
+
+<div data-role="fieldcontain">
+<textarea rows="8" name="title" id="title" style="width: 100%"></textarea>
+</div>
+
+<input type="submit" value="Add List" data-theme="c" /> 
+
+
+</form>
+
+
+{% endblock %}

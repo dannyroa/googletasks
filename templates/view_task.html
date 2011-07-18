@@ -1,13 +1,43 @@
 {% extends "base.html" %}
 
-{% block header %}<h1><a href="/list/{{ list.id }}">{{ list.title }}</a></h1>{% endblock %}
+{% block header %}<h1 class="header_title"><a type="button" href="/list/{{ list.id }}">{{ list.title }}</a></h1>{% endblock %}
 
 {% block body %}
 
 <div class="align-center"><h1>{{ task.title }}</h1></div>
 
-<input type="submit" value="Mark as Completed" data-theme="b" />
+<form id="task_form" method="POST" action="/list/{{ list.id }}/task/{{ task.id }}">
+{% if task.status = "needsAction"%}
+<input id="btn_mark_as_completed" type="button" value="Mark as Completed" data-theme="b" />
+{% else %}
+<input id="btn_revert" type="button" value="Revert" data-theme="b" />
+{% endif %}
+<input id="btn_delete" type="button" value="Delete" data-theme="c" /> 
 
-<input type="button" value="Delete" data-theme="c" /> 
+<input type="hidden" id="action" name="action" value="" />
+
+</form>
+<script>
+
+$('#btn_delete').click(function() {
+	$("#action").val("delete");
+	$("#task_form").submit();
+});
+
+if ($('#btn_mark_as_completed').length > 0) {
+	$('#btn_mark_as_completed').click(function() {
+		$("#action").val("completed");
+		$("#task_form").submit();
+	}	);
+}
+
+if ($('#btn_revert').length > 0) {
+	$('#btn_revert').click(function() {
+		$("#action").val("revert");
+		$("#task_form").submit();
+	}	);
+}
+
+</script>
 
 {% endblock %}

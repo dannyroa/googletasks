@@ -1,20 +1,37 @@
 <html>
   <head>
-
+<meta charset="utf-8"> 
+	<meta name="viewport" content="width=device-width, minimum-scale=1, maximum-scale=1"> 
 <link rel="stylesheet" href="http://code.jquery.com/mobile/1.0b1/jquery.mobile-1.0b1.min.css" />
 <script src="http://code.jquery.com/jquery-1.6.1.min.js"></script>
+
+    <link href="/css/style.css" rel="stylesheet" type="text/css">
+
+<script type="text/javascript"> 
+ 
+$(document).bind("mobileinit", function(){
+  $.mobile.ajaxEnabled = false;
+});
+</script> 
+
 <script src="http://code.jquery.com/mobile/1.0b1/jquery.mobile-1.0b1.min.js"></script>
-    <link href="/css/style.css" rel="stylesheet" type="text/cs">
+
   </head>
   <body>
-    <div  data-role="page">
-    
-<div data-role="header"><a href="/" data-icon="home">Lists</a> {% block header %}{% endblock %}</div>
+
+
+
+    <div data-role="page" data-theme="b" id="jqm-home">
+
+
+<div data-role="header" data-position="inline"><a href="/" data-role="button" data-icon="home" data-iconpos="notext">Home</a>{% block header %}{% endblock %}</div>
         
-<div  data-role="content">
+<div data-role="content">
 {% block body %}
 
 {% endblock %}
+
+
 </div>
     </div>
   </body>

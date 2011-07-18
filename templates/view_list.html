@@ -1,13 +1,21 @@
 
 {% extends "base.html" %}
 
-{% block header %}<h1>{{ list.title }}</h1>{% endblock %}
+{% block header %}<h1>{{ list.title }}</h1> <a href="/list/{{ list.id }}/task/add" data-icon="add">New Task</a>{% endblock %}
 
 {% block body %}
 
-<ul data-role="listview" data-inset="true"> 
+<ul data-role="listview" data-split-theme="d"> 
 {% for task in tasks %}
-<li><a href="/list/{{ list.id }}/task/{{ task.id }}">{{ task.title }}</a></li>
+{% if task.status != "completed" %}
+<li><a href="/list/{{ list.id }}/task/{{ task.id }}">{{ task.title }}</a>
+<a href="/list/{{ list.id }}/task/{{ task.id }}/complete" data-role="button" data-icon="check" data-iconpos="notext">Mark As Complete</a>
+</li>
+{% else %}
+<li><a href="/list/{{ list.id }}/task/{{ task.id }}"><del>{{ task.title }}</del></a></li>
+{% endif %}
+{% empty %}
+<h2 class="align-center">No Tasks Yet.</h2>
 {% endfor %}
 </ul>
 
