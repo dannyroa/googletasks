@@ -4,7 +4,7 @@
 {% block header %}<h1>{{ list.title }}</h1> <a href="/list/{{ list.id }}/task/add" data-icon="add">New Task</a>{% endblock %}
 
 {% block body %}
-
+<div>
 <ul data-role="listview" data-split-theme="d"> 
 {% for task in tasks %}
 {% if task.status != "completed" %}
@@ -18,5 +18,14 @@
 <h2 class="align-center">No Tasks Yet.</h2>
 {% endfor %}
 </ul>
+</div>
+
+{% if tasks %}
+<p>&nbsp;</p>
+<form id="task_form" method="POST" action="/list/{{ list.id }}">
+
+<input type="submit" value="Clear Completed Tasks" data-theme="b" /> 
+</form>
+{% endif %}
 
 {% endblock %}

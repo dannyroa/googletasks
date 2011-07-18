@@ -101,15 +101,19 @@ class MainHandler(webapp.RequestHandler):
     def get(self):
 
         if not users.get_current_user():
-            self.redirect('/connect')
+            login_url = users.create_login_url("/connect")
+            self.response.out.write(template.render('templates/index.html',
+                                                  {'login_url': login_url}))
         else:
             service = get_task_service()
 
             tasklists = service.tasklists().list().execute()
             lists = tasklists['items']
+
+            logout_url = users.create_logout_url("/")
             
-            self.response.out.write(template.render('templates/index.html',
-                                                  {'lists': lists}))
+            self.response.out.write(template.render('templates/home.html',
+                                                  {'lists': lists, 'logout_url' : logout_url}))
 
 class ViewListHandler(webapp.RequestHandler):
 
@@ -126,6 +130,14 @@ class ViewListHandler(webapp.RequestHandler):
 
         self.response.out.write(template.render('templates/view_list.html',
                                               {'list' : list, 'tasks': tasks}))
+
+    def post(self, list_id):
+
+        service = get_task_service()
+
+        service.tasks().clear(tasklist=list_id, body={}).execute()
+
+        self.redirect('/list/%s' % list_id)
 
 
 class AddListHandler(webapp.RequestHandler):

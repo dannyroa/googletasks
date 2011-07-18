@@ -1,13 +1,20 @@
 {% extends "base.html" %}
 
-{% block header %}<h1>Lists</h1> <a href="/list/add" data-icon="add">New List</a>{% endblock %}
+{% block header %}<h1>HeyTasks</h1>{% endblock %}
 
 {% block body %}
 
-<ul data-role="listview" data-inset="true"> 
-{% for list in lists %}
-<li><a href="/list/{{ list.id }}">{{ list.title }}</a></li>
-{% endfor %}
-</ul>
+<div class="align-center">
+
+<h2>Mobile-friendly site for Google Tasks</h2>
+<a href="{{ login_url }}" data-role="button">Login</a>
+<h3>We don't store any of your info except your authorization code for Google Tasks.</h3>
+
+<div>Built by <a href="http://www.dannyroa.com">Danny Roa</a> </div>
+<h3></h3>
+<div>Find me on <br/><a href="http://twitter.com/dannyroa">Twitter</a> &nbsp; <a href="https://plus.google.com/118368577681197448408/">G+</a></div>
+</div>
+
+
 
 {% endblock %}
